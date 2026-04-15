@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Heist</title>
+    <style>
+        :root {
+            --bg-color: #050510;
+            --neon-blue: #00f3ff;
+            --neon-red: #ff003c;
+            --neon-green: #39ff14;
+            --panel-bg: rgba(10, 15, 30, 0.8);
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: var(--font-main);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Top Right HUD */
+        #hud {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .hud-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-blue);
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        #hint-btn {
+            background: transparent;
+            border: 1px solid #ffcc00;
+            color: #ffcc00;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(255, 204, 0, 0.3);
+            display: none;
+        }
+
+        #hint-btn:hover {
+            background: rgba(255, 204, 0, 0.1);
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+        }
+
+        /* Shared Screen Styles */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .screen.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Start Screen */
+        .btn-large {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 15px 40px;
+            font-size: 2rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            box-shadow: 0 0 15px var(--neon-blue), inset 0 0 15px transparent;
+            transition: all 0.3s ease;
+        }
+
+        .btn-large:hover {
+            box-shadow: 0 0 25px var(--neon-blue), inset 0 0 15px var(--neon-blue);
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        /* Stage Styles */
+        h2 {
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        .image-container {
+            width: 60%;
+            max-width: 800px;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            background: #000;
+        }
+
+        .image-container img {
+            width: 100%;
+            display: block;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--neon-blue);
+            color: white;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            width: 300px;
+            text-align: center;
+            outline: none;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+        }
+
+        .btn-submit {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 10px 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        .error-msg {
+            color: var(--neon-red);
+            font-size: 0.9rem;
+            min-height: 20px;
+            text-shadow: 0 0 5px rgba(255, 0, 60, 0.5);
+            margin-top: 5px;
+        }
+
+        /* Folder Interface */
+        #folder {
+            width: 150px;
+            height: 120px;
+            background: #d9a05b;
+            position: relative;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.3), 0 0 15px rgba(217, 160, 91, 0.5);
+            transition: transform 0.3s ease;
+            margin-bottom: 40px;
+        }
+        #folder::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 0;
+            width: 60px;
+            height: 15px;
+            background: #cf9550;
+            border-radius: 5px 5px 0 0;
+        }
+        #folder:hover {
+            transform: scale(1.05);
+        }
+        .folder-text {
+            position: absolute;
+            bottom: -50px;
+            width: 100%;
+            text-align: center;
+            color: #d9a05b;
+        }
+
+        #file-contents {
+            display: none;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 30px;
+            border: 2px solid rgba(0, 243, 255, 0.2);
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.05), rgba(0,0,0,0.8));
+            border-radius: 12px;
+            width: 160px;
+            height: 180px;
+            cursor: pointer;
+        }
+        .file-item:hover {
+            transform: translateY(-10px) scale(1.05);
+            border-color: var(--neon-blue);
+            box-shadow: 0 10px 25px rgba(0, 243, 255, 0.4);
+        }
+
+        .cyber-icon {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 0 10px currentColor);
+            transition: transform 0.3s, filter 0.3s;
+            margin-bottom: -10px;
+        }
+
+        .file-item:hover .cyber-icon {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 20px currentColor);
+        }
+
+        .file-name {
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .img-icon { color: var(--neon-blue); }
+        .pdf-icon { color: var(--neon-red); }
+
+        .inline-building {
+            width: 250px;
+            height: 250px;
+            border: 2px solid rgba(0, 243, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+        
+        .inline-building img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* In-page Viewer */
+        #viewer-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-color);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #viewer-back {
+            position: absolute;
+            top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 10px 30px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 210;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        #viewer-back:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+        #viewer-content {
+            width: 90%; height: 80%;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #viewer-content img, #viewer-content iframe {
+            max-width: 100%; max-height: 100%;
+            border: 2px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        /* Modal styling */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-blue);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .modal-box p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-btns {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border: 1px solid;
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+            color: white;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .btn-yes { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-yes:hover { background: rgba(255, 0, 60, 0.2); box-shadow: 0 0 10px var(--neon-red); }
+
+        .btn-no { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .btn-no:hover { background: rgba(0, 243, 255, 0.2); box-shadow: 0 0 10px var(--neon-blue); }
+
+        /* Final Stage Styles */
+        .final-score {
+            font-size: 4rem;
+            color: var(--neon-green);
+            text-shadow: 0 0 20px var(--neon-green);
+            margin: 20px 0;
+        }
+        .final-score.negative {
+            color: var(--neon-red);
+            text-shadow: 0 0 20px var(--neon-red);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="hud" style="display: none;">
+        <div class="hud-box">Points: <span id="points-display">50</span></div>
+        <div class="hud-box">Time: <span id="time-display">2:00</span></div>
+        <button id="hint-btn" onclick="requestHint()">HINT</button>
+        <!-- Sticky Hint Container -->
+        <div id="active-hint" style="display: none; background: var(--panel-bg); border: 1px solid #ffcc00; color: #ffcc00; padding: 15px; border-radius: 4px; font-size: 0.95rem; max-width: 250px; text-align: right; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); line-height: 1.4;"></div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="screen-start" class="screen active">
+        <button class="btn-large" onclick="startGame()">START</button>
+    </div>
+
+    <!-- Stage 1: I2 -->
+    <div id="screen-stage1" class="screen">
+        <h2>IMAGE 1/2</h2>
+        <div class="image-container">
+            <img src="P2.png" alt="P2 Image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzIyMiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjNTU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UDIucG5nIG1pc3Npbmc8L3RleHQ+PC9zdmc+'" />
+        </div>
+        <div class="input-group">
+            <input type="text" id="input-stage1" placeholder="Enter hidden word" autocomplete="off">
+            <button class="btn-submit" onclick="checkStage1()">Submit</button>
+            <div id="err-stage1" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- Stage 2: I1 -->
+    <div id="screen-stage2" class="screen">
+        <h2>IMAGE 2/2</h2>
+        <div class="image-container">
+            <img src="P1.png" alt="P1 Image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzIyMiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjNTU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UDEucG5nIG1pc3Npbmc8L3RleHQ+PC9zdmc+'" />
+        </div>
+        <div class="input-group">
+            <input type="text" id="input-stage2" placeholder="Enter hidden word" autocomplete="off">
+            <button class="btn-submit" onclick="checkStage2()">Submit</button>
+            <div id="err-stage2" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- Stage 3: Folder Interface -->
+    <div id="screen-stage3" class="screen">
+        <h2>System Directory</h2>
+        
+        <!-- Folder Icon -->
+        <div id="folder" ondblclick="openFolder()">
+            <div class="folder-text">CLASSIFIED<br><small>(Double Click)</small></div>
+        </div>
+
+        <!-- Files inside Folder (Hidden initially) -->
+        <div id="file-contents">
+            <div class="file-item img-icon" onclick="viewFile('image', 'image.png')">
+                <svg viewBox="0 0 100 100" class="cyber-icon">
+                    <path d="M50 5 L95 25 L95 75 L50 95 L5 75 L5 25 Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="20" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="10 5" stroke-linecap="round"/>
+                    <circle cx="50" cy="50" r="6" fill="currentColor" />
+                    <path d="M50 5 L50 30 M95 25 L70 40 M95 75 L70 60 M50 95 L50 70 M5 75 L30 60 M5 25 L30 40" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+                </svg>
+                <div class="file-name">Image Data</div>
+            </div>
+            
+            <div class="inline-building">
+                <img src="Building.png" alt="Building" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjQwMCIgZmlsbD0iIzIyMiI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSIjNTU1IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QnVpbGRpbmcucG5nIG1pc3Npbmc8L3RleHQ+PC9zdmc+'" />
+            </div>
+
+            <div class="file-item pdf-icon" onclick="viewFile('pdf', 'file.pdf')">
+                <svg viewBox="0 0 100 100" class="cyber-icon">
+                    <rect x="15" y="10" width="70" height="80" rx="4" fill="currentColor" fill-opacity="0.05" stroke="currentColor" stroke-width="2"/>
+                    <path d="M15 25 L5 25 L5 40 L15 40 M85 75 L95 75 L95 60 L85 60" stroke="currentColor" fill="none" stroke-width="1.5" />
+                    <rect x="30" y="30" width="40" height="4" fill="currentColor" opacity="0.8" />
+                    <rect x="30" y="45" width="25" height="4" fill="currentColor" opacity="0.8" />
+                    <rect x="30" y="60" width="35" height="4" fill="currentColor" opacity="0.8" />
+                    <rect x="60" y="70" width="16" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                    <path d="M64 70 L64 65 A 4 4 0 0 1 72 65 L72 70" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+                <div class="file-name">Document</div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div id="stage3-input-area" class="input-group" style="opacity: 0; pointer-events: none; transition: opacity 0.5s;">
+            <input type="text" id="input-stage3" placeholder="Enter stolen data" autocomplete="off">
+            <button class="btn-submit" onclick="checkStage3()">Submit</button>
+            <div id="err-stage3" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- Final Stage -->
+    <div id="screen-final" class="screen">
+        <h2>PROCEED TO NEXT STAGE</h2>
+        <div>Total Points Gained:</div>
+        <div id="final-points" class="final-score">0</div>
+    </div>
+
+    <!-- In-page Viewer -->
+    <div id="viewer-container">
+        <button id="viewer-back" onclick="closeViewer()">&#8592; BACK</button>
+        <div id="viewer-content"></div>
+    </div>
+
+    <!-- Custom Modal Overlay -->
+    <div id="modal-overlay">
+        <div class="modal-box">
+            <p id="modal-text"></p>
+            <div class="modal-btns" id="modal-confirm-btns">
+                <button class="modal-btn btn-yes" onclick="acceptHint()">Yes</button>
+                <button class="modal-btn btn-no" onclick="closeModal()">No</button>
+            </div>
+            <div class="modal-btns" id="modal-close-only" style="display: none;">
+                <button class="modal-btn btn-no" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let points = 50;
+        let timeLeft = 120;
+        let timerInterval = null;
+        let currentStage = 0; // 1 = I2, 2 = I1, 3 = Folder
+        let folderOpened = false;
+
+        // Elements
+        const hud = document.getElementById('hud');
+        const pointsDisplay = document.getElementById('points-display');
+        const timeDisplay = document.getElementById('time-display');
+        const hintBtn = document.getElementById('hint-btn');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalText = document.getElementById('modal-text');
+        const modalConfirmBtns = document.getElementById('modal-confirm-btns');
+        const modalCloseOnly = document.getElementById('modal-close-only');
+
+        // Stages
+        const stages = {
+            1: "screen-stage1",
+            2: "screen-stage2",
+            3: "screen-stage3",
+            4: "screen-final"
+        };
+
+        // Utility: Format time as M:SS
+        function formatTime(seconds) {
+            const m = Math.floor(Math.max(0, seconds) / 60);
+            const s = Math.max(0, seconds) % 60;
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Utility: Update HUD text
+        function updateHUD() {
+            pointsDisplay.innerText = points;
+            timeDisplay.innerText = formatTime(timeLeft);
+        }
+
+        // Utility: Switch screens
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Start Game
+        function startGame() {
+            hud.style.display = 'flex';
+            currentStage = 1;
+            updateHintButtonVisibility();
+            showScreen(stages[currentStage]);
+
+            // Start global timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateHUD();
+                if (timeLeft <= 0) {
+                    timeOut();
+                }
+            }, 1000);
+            
+            // Allow pressing Enter in input fields
+            setupEnterKey();
+        }
+
+        function setupEnterKey() {
+            document.getElementById('input-stage1').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') checkStage1();
+            });
+            document.getElementById('input-stage2').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') checkStage2();
+            });
+            document.getElementById('input-stage3').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') checkStage3();
+            });
+        }
+
+        // Timer reaches zero before finishing stage 3
+        function timeOut() {
+            clearInterval(timerInterval);
+            points -= 50;
+            finishGame();
+        }
+
+        // Game Finished
+        function finishGame() {
+            currentStage = 4;
+            updateHUD();
+            hud.style.display = 'none';
+            showScreen(stages[4]);
+            
+            const fpElem = document.getElementById('final-points');
+            fpElem.innerText = points;
+            if (points < 0) {
+                fpElem.classList.add('negative');
+            }
+        }
+
+        // Validation logic
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.innerText = msg;
+            setTimeout(() => { if (el.innerText === msg) el.innerText = ''; }, 3000);
+            
+            // Deduct 0 points for wrong guess ? User didn't specify, only for hint/timeout.
+        }
+
+        function checkStage1() {
+            const val = document.getElementById('input-stage1').value.trim();
+            if (val === "SECURE") {
+                currentStage = 2;
+                updateHintButtonVisibility();
+                showScreen(stages[currentStage]);
+            } else {
+                showError('err-stage1', 'Incorrect try again');
+            }
+        }
+
+        function checkStage2() {
+            const val = document.getElementById('input-stage2').value.trim();
+            if (val === "LOCK") {
+                currentStage = 3;
+                updateHintButtonVisibility();
+                showScreen(stages[currentStage]);
+            } else {
+                showError('err-stage2', 'Incorrect try again');
+            }
+        }
+
+        // Stage 3 interactions
+        function openFolder() {
+            if (folderOpened) return;
+            folderOpened = true;
+            document.getElementById('folder').style.display = 'none';
+            document.getElementById('file-contents').style.display = 'flex';
+            
+            // Show input area slightly after
+            const inputArea = document.getElementById('stage3-input-area');
+            inputArea.style.opacity = '1';
+            inputArea.style.pointerEvents = 'all';
+        }
+
+        function checkStage3() {
+            const val = document.getElementById('input-stage3').value.trim();
+            // Expected: Architecture Plan
+            if (val === "Architecture Plan") {
+                clearInterval(timerInterval); // Stop timer globally!
+                finishGame();
+            } else {
+                showError('err-stage3', 'Incorrect try again');
+            }
+        }
+
+        // Viewer logic for Stage 3
+        function viewFile(type, src) {
+            const vc = document.getElementById('viewer-content');
+            vc.innerHTML = '';
+            if (type === 'image') {
+                vc.innerHTML = `<img src="${src}" alt="Viewed Image">`;
+            } else if (type === 'pdf') {
+                vc.innerHTML = `<iframe src="${src}" width="100%" height="100%"></iframe>`;
+            }
+            document.getElementById('viewer-container').style.display = 'flex';
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer-container').style.display = 'none';
+            document.getElementById('viewer-content').innerHTML = '';
+        }
+
+        // Hint System
+        let pendingHintText = "";
+
+        function updateHintButtonVisibility() {
+            // Hide the active hint text when navigating to a new stage
+            document.getElementById('active-hint').style.display = 'none';
+
+            // "no hint needed for attack cause breach and attack image both can use the transparency related image itself" (User request)
+            if (currentStage === 1 || currentStage === 3) {
+                hintBtn.style.display = 'block';
+            } else {
+                hintBtn.style.display = 'none';
+            }
+        }
+
+        function requestHint() {
+            modalText.innerHTML = "If you choose to view this hint, <br><strong style='color:var(--neon-red)'>you will lose 20 points</strong>.<br><br>Proceed?";
+            modalConfirmBtns.style.display = 'flex';
+            modalCloseOnly.style.display = 'none';
+            
+            if (currentStage === 1) {
+                pendingHintText = "Information is sometimes hidden in plain sight. Alter your perception of transparency.";
+            } else if (currentStage === 3) {
+                pendingHintText = "Information often lurks at the fringes, casting shadows where documents begin.";
+            }
+
+            modalOverlay.style.display = 'flex';
+        }
+
+        function acceptHint() {
+            points -= 20;
+            updateHUD();
+            
+            // Close the modal instantly
+            closeModal();
+            
+            // Hide the button and permanently display the hint text below the points
+            document.getElementById('hint-btn').style.display = 'none';
+            const ah = document.getElementById('active-hint');
+            ah.innerHTML = pendingHintText;
+            ah.style.display = 'block';
+        }
+
+        function closeModal() {
+            modalOverlay.style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>
